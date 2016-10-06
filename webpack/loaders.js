@@ -3,9 +3,6 @@ exports.ts = {
   loader: 'awesome-typescript-loader',
   query: {
     babelCore: 'babel-core',
-    babelOptions: {
-      presets: ['es2015'],
-    },
   },
 };
 

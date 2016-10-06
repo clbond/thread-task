@@ -81,7 +81,12 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 "use strict";
 
-class Task {}
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Task = function Task() {
+  _classCallCheck(this, Task);
+};
+
 exports.Task = Task;
 
 /***/ },
@@ -92,7 +97,9 @@ exports.Task = Task;
 "use strict";
 
 function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+    for (var p in m) {
+        if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+    }
 }
 __export(__webpack_require__(0));
 
