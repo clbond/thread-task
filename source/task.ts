@@ -14,7 +14,7 @@ import {FunctionPair} from './function-pair';
 
 import {Pipe, PipeImpl} from './pipe';
 
-export type Executable<T> = FunctionPair<T> | ((pipe?: Pipe, ...args) => T);
+export type Executable<T> = (pipe?: Pipe, ...args) => T;
 
 export interface TaskResult<R> {
   /// A promise that will be resolved when the task completes
@@ -26,13 +26,13 @@ export interface TaskResult<R> {
 
 /// A task which runs in a separate thread and produces a value of type {@link R}
 export class Task<R> {
-  static run<Result>(func: Executable<Result>): TaskResult<Result> {
-    return new Task<Result>(func).run();
+  static run<Result>(func: Executable<Result>, ...args): TaskResult<Result> {
+    return new Task<Result>(new FunctionPair(func, ...args)).run();
   }
 
-  constructor(private func: Executable<R>) {}
+  constructor(private func: FunctionPair<R> | Executable<R>) {}
 
-  run(): TaskResult<R> {
+  run(...args): TaskResult<R> {
     const pipe = new PipeImpl();
 
     const promise = new Promise((resolve, reject) => {
@@ -54,15 +54,16 @@ export class Task<R> {
     return {promise, pipe};
   }
 
-  private wrap(): string {
-    let pair: FunctionPair<R>;
+  private functionPair(): FunctionPair<R> {
+    if (this.func instanceof FunctionPair) {
+      return <FunctionPair<R>> <any> this.func;
+    }
 
-    if (this.func instanceof FunctionPair === false) {
-      pair = new FunctionPair(<(args?) => R> this.func);
-    }
-    else {
-      pair = <FunctionPair<R>> <any> this.func;
-    }
+    return new FunctionPair(<(args?) => R> this.func);
+  }
+
+  private wrap(): string {
+    const pair = this.functionPair();
 
     const functionString = pair.func.toString();
 

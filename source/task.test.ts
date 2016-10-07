@@ -52,13 +52,20 @@ describe('Task', () => {
 
      Object.setPrototypeOf(argument, {protofunc: () => 'foobar'});
 
-     const f = (passedArgument): void => {
+     const f = function (passedArgument) {
        // this is running inside of a worker
        if (passedArgument.protofunc() !== 'foobar') {
          throw new Error('Invalid value!');
        }
      };
 
-     Task.run(new FunctionPair(f, argument)).promise.then(done);
+     Task.run(f, argument).promise.then(done);
    });
+
+   it('should be able to communicate with a task using Pipe',
+     done => {
+       const task = Task.run(pipe => {
+
+       });
+     });
 });
