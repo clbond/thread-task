@@ -36,6 +36,8 @@ const serializer = object => {
     case 'boolean':
     case 'undefined':
       return JSON.stringify(object);
+    case 'function':
+      return object.toString();
   }
 
   const operation = new Operation();
@@ -156,7 +158,7 @@ function map(operation: Operation, value) {
               operation.tails.push(() => {
                 let p = map(operation, prototype(value));
 
-                operation.objref[index] = `{${Object.keys(value).map(key => {
+                operation.objref[index] = `{${Object.getOwnPropertyNames(value).map(key => {
                     const mapped = map(operation, value[key]);
   
                     if (mapped instanceof Reference) {

@@ -17,7 +17,6 @@
     "@types/jasmine": "^2.5.35",
     "@types/node": "^6.0.45",
     "awesome-typescript-loader": "^2.2.4",
-    "babel": "^6.5.2",
     "babel-core": "^6.17.0",
     "babel-loader": "^6.2.5",
     "babel-polyfill": "^6.16.0",

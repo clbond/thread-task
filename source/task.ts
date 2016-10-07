@@ -68,6 +68,13 @@ export class Task<R> {
       worker.onerror = (error: Event) => {
         reject(error);
       };
+
+      pipe.subscribeOutgoing(message => {
+        worker.postMessage({
+          objectType: ObjectType.Message,
+          value: serialize(message),
+        });
+      });
     });
 
     return {promise, pipe};
@@ -93,21 +100,17 @@ export class Task<R> {
     const wrapped = `
       const imports = {};
 
-      (function() {
-        const exports = {};
-        ${serializationCode};
+      let exports = {};
+      ${serializationCode};
 
-        Object.assign(imports, {serialization: exports});
-      })();
+      Object.assign(imports, {serialization: exports});
 
-      (function() {
-        const exports = {};
-        ${pipeCode};
+      exports = {};
+      ${pipeCode};
 
-        Object.assign(imports, {pipe: exports});
-      })();
+      Object.assign(imports, {pipe: exports});
 
-      var executor = ${functionString};
+      const executor = (${functionString});
 
       const deserializedArgs =
         (${serializedArgs}).map(function(a) {
@@ -123,14 +126,16 @@ export class Task<R> {
       var func = Function.bind.apply(executor, [null].concat(deserializedArgs));
 
       onmessage = function (m) {
-        pipe.postIncomingMessage(imports.serialization.deserialize(m.data));
+        pipe.postIncomingMessage(imports.serialization.deserialize(m.data.value));
       };
 
       pipe.subscribeOutgoing(
         function (message) {
+          const serializedMessage = imports.serialization.serialize(message);
+
           postMessage({
             objectType: ${ObjectType.Message},
-            value: imports.serialization.serialize(message),
+            value: serializedMessage,
           });
         });
 

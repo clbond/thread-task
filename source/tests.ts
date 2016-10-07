@@ -3,8 +3,6 @@ import 'babel-polyfill';
 import 'core-js/es6';
 import 'core-js/es7/reflect';
 
-import 'ts-helpers';
-
 const testContext = (<any>require).context('.', true, /^(.(?!tests\.))*ts$/);
 
 testContext('./index.ts');

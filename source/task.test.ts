@@ -122,4 +122,26 @@ describe('Task', () => {
 
         task.promise.then(done);
       });
+
+    it('should be able to pass a complex class instance through a Pipe and call one of its methods',
+       done => {
+         const task = Task.run(pipe => {
+           class MyClass {
+             private instanceVariable = 10;
+
+             public myFunction() {
+               return `My instance variable is ${this.instanceVariable}`;
+             }
+           }
+
+           pipe.postMessage(new MyClass());
+         });
+
+         task.pipe.subscribe(
+           myClassInstance => {
+             const returnValue = myClassInstance.myFunction();
+             expect(returnValue).toBe('My instance variable is 10');
+             done();
+           });
+       });
 });
