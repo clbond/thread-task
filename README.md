@@ -97,8 +97,8 @@ some data from a server and then process it inside of the worker thread:
 If our service were returning a JSON document of `[0, 1, 2]`, this would
 produce in the console:
 
-Result: [0, 10, 20]
 ```
+Result: [0, 10, 20]
 ```
 
 ## Communication
