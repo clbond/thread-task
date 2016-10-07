@@ -30,7 +30,6 @@ module.exports = (config) => {
       'karma-sourcemap-loader',
       'karma-webpack',
       'karma-coverage',
-      'karma-remap-istanbul',
       'karma-spec-reporter',
       'karma-chrome-launcher',
       'karma-transform-path-preprocessor',
@@ -80,9 +79,7 @@ module.exports = (config) => {
 
     webpackServer: { noInfo: true },
 
-    reporters: ['spec']
-      .concat(coverage)
-      .concat(coverage.length > 0 ? ['karma-remap-istanbul'] : []),
+    reporters: ['spec'].concat(coverage),
 
     remapIstanbulReporter: {
       src: 'coverage/chrome/coverage-final.json',
@@ -93,7 +90,8 @@ module.exports = (config) => {
 
     coverageReporter: {
       reporters: [
-        { type: 'json' },
+        {type: 'json'},
+        {type: 'html'},
       ],
       subdir: b => b.toLowerCase().split(/[ /-]/)[0],
     },
@@ -111,8 +109,6 @@ module.exports = (config) => {
 function combinedLoaders() {
   return Object.keys(loaders).reduce(function reduce(aggregate, k) {
     switch (k) {
-    case 'istanbulInstrumenter':
-      return aggregate;
     case 'ts':
       return aggregate.concat([ // force inline source maps
         Object.assign(loaders[k],

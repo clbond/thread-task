@@ -5,9 +5,7 @@ import 'core-js/es7/reflect';
 
 import 'ts-helpers';
 
-const looseRequire: {context?: Function} = require;
-
-const testContext = looseRequire.context('.', true, /^(.(?!tests\.))*ts$/);
+const testContext = (<any>require).context('.', true, /^(.(?!tests\.))*ts$/);
 
 testContext('./index.ts');
 

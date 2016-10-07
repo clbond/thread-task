@@ -7,7 +7,7 @@ exports.ts = {
 };
 
 exports.istanbulInstrumenter = {
-  enforce: 'pre',
-  test: /^(.(?!\tests\.))*ts$/,
+  enforce: 'post',
+  test: /^(.(?!(test|serialize)))*\.ts$/,
   loader: 'istanbul-instrumenter-loader',
 };
