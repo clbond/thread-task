@@ -1,6 +1,5 @@
 import {Task} from './task';
-import Result = jasmine.Result;
-
+import {FunctionPair} from './function-pair';
 
 describe('Task', () => {
   it('factory should not throw', () => {
@@ -26,7 +25,7 @@ describe('Task', () => {
       });
     });
 
-  it('should be able to return complex object types',
+  it('should be able to return complex object types across thread boundaries, intact',
     done => {
       Task.run(() => {
         const complexObject = {a: 1, b: {c: 'foobar'}};
@@ -36,6 +35,7 @@ describe('Task', () => {
         return complexObject;
       })
       .then((taskResult: any) => {
+        // this was returned from our worker
         expect(taskResult.a).toBe(1);
         expect(taskResult.b.c).toBe('foobar');
         expect(taskResult.hasOwnProperty('base')).toBe(false);
@@ -45,4 +45,20 @@ describe('Task', () => {
         done();
       });
     });
+
+  it('should be able to pass complex arguments to across thread boundaries to tasks',
+   done => {
+     const argument = {myArgument: 'foo'};
+
+     Object.setPrototypeOf(argument, {protofunc: () => 'foobar'});
+
+     const f = (passedArgument): void => {
+       // this is running inside of a worker
+       if (passedArgument.protofunc() !== 'foobar') {
+         throw new Error('Invalid value!');
+       }
+     };
+
+     Task.run(new FunctionPair(f, argument)).then(done);
+   });
 });
