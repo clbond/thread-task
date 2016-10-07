@@ -51,8 +51,8 @@ will be able to run background operations without any context or arguments.
 So let's get a bit more creative with this, and create a task that accepts
 a `multiply` function that will multiply the value it is given by 10. But this
 logic originates in the main application and is provided to your task as an
-argument. Then we convert that number to a string representation of a base16
-number:
+argument.
+
 
 ```typescript
   const myTask = (multiply: (value: number) => number) => multiply(500);
