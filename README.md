@@ -1,4 +1,4 @@
-== thread-task
+## thread-task
 
 What is `thread-task`? In essence, it is a multithreaded task library for web
 applications. "But web applications are single-threaded," you say! Indeed they
@@ -23,7 +23,7 @@ Putting all of this together, it allows you to move expensive operations into
 a concurrent thread in a way that is dead simple, and in a way that lets you
 communicate using your real state objects, no matter how complex they are!
 
-== Usage
+## Usage
 
 Let's look first at the simplest, most contrived possible use of `Task`:
 
