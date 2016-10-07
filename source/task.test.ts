@@ -10,7 +10,7 @@ describe('Task', () => {
 
   it('should be able to run a basic task with constructor and run',
     done => {
-      new Task(() => {}).run().then(done);
+      new Task(() => {}).run().promise.then(done);
     });
 
   it('should be able to run a basic task with run()',
@@ -19,7 +19,7 @@ describe('Task', () => {
         console.log('I am doing this from my task!');
         return 1;
       })
-      .then(taskResult => {
+      .promise.then(taskResult => {
         expect(taskResult).toBe(1);
         done();
       });
@@ -34,7 +34,7 @@ describe('Task', () => {
 
         return complexObject;
       })
-      .then((taskResult: any) => {
+      .promise.then((taskResult: any) => {
         // this was returned from our worker
         expect(taskResult.a).toBe(1);
         expect(taskResult.b.c).toBe('foobar');
@@ -59,6 +59,6 @@ describe('Task', () => {
        }
      };
 
-     Task.run(new FunctionPair(f, argument)).then(done);
+     Task.run(new FunctionPair(f, argument)).promise.then(done);
    });
 });

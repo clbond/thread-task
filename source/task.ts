@@ -1,6 +1,9 @@
 import {TaskBlob} from './blob';
 
-import {serializationCode} from './importer';
+import {
+  pipeCode,
+  serializationCode,
+} from './importer';
 
 import {
   deserialize,
@@ -9,32 +12,46 @@ import {
 
 import {FunctionPair} from './function-pair';
 
-export type Executable<T> = FunctionPair<T> | (() => T);
+import {Pipe, PipeImpl} from './pipe';
 
-/// A task which runs in a separate thread and produces a simple return value of some sort
+export type Executable<T> = FunctionPair<T> | ((pipe?: Pipe, ...args) => T);
+
+export interface TaskResult<R> {
+  /// A promise that will be resolved when the task completes
+  promise: Promise<R>;
+
+  /// Thread communication pipe
+  pipe: Pipe;
+}
+
+/// A task which runs in a separate thread and produces a value of type {@link R}
 export class Task<R> {
-  static run<Result>(func: Executable<Result>): Promise<Result> {
+  static run<Result>(func: Executable<Result>): TaskResult<Result> {
     return new Task<Result>(func).run();
   }
 
   constructor(private func: Executable<R>) {}
 
-  run(): Promise<R> {
-    return new Promise((resolve, reject) => {
+  run(): TaskResult<R> {
+    const pipe = new PipeImpl();
+
+    const promise = new Promise((resolve, reject) => {
       const worker = new Worker(this.wrap());
 
       worker.onmessage = message => {
-        const data = deserialize(message.data);
-
-        resolve(data);
+        try {
+          resolve(deserialize(message.data));
+        } catch (e) {
+          reject(new Error(`Failed to deserialize return result: ${e.stack}`));
+        }
       };
 
       worker.onerror = (error: Event) => {
         reject(error);
       };
-
-      worker.postMessage({start: true});
     });
+
+    return {promise, pipe};
   }
 
   private wrap(): string {
@@ -49,39 +66,61 @@ export class Task<R> {
 
     const functionString = pair.func.toString();
 
-    const wrapped = `
-      ${serializationCode()};
-      
-      const args = ${pair.args ? JSON.stringify(pair.args.map(a => serialize(a))) : []};
-      
-      var f = ${functionString};
-      
-      const deserializedArgs =
-        args.map(function(a) {
-          return exports.deserialize(a);
-        });
-      
-      var func = Function.bind.apply(f, [null].concat(deserializedArgs));
-     
-      onmessage = function (m) { // start
-        if (m.data == null || m.data.start !== true) {
-          throw new Error('Received unknown message');
-        }
+    const serializedArgs = pair.args
+      ? JSON.stringify(pair.args.map(a => serialize(a)))
+      : [];
 
-        var returnValue = func();
-        
-        if (returnValue) {
-          if (typeof returnValue.then === 'function') {
-            returnValue.then(
-              function (promiseValue) {
-                postMessage(exports.serialize(promiseValue));
-              });
-            return;
-          }
-        }
-        
-        postMessage(exports.serialize(returnValue));
+    const wrapped = `
+      const imports = {};
+
+      (function() {
+        const exports = {};
+        ${serializationCode};
+
+        Object.assign(imports, {serialization: exports});
+      })();
+
+      (function() {
+        const exports = {};
+        ${pipeCode};
+
+        Object.assign(imports, {pipe: exports});
+      })();
+
+      var executor = ${functionString};
+
+      const deserializedArgs =
+        (${serializedArgs}).map(function(a) {
+          return imports.serialization.deserialize(a);
+        });
+
+      const pipe = new imports.pipe.PipeImpl();
+
+      if (deserializedArgs.length < executor.length) {
+        deserializedArgs.unshift(pipe);
+      }
+
+      var func = Function.bind.apply(executor, [null].concat(deserializedArgs));
+
+      onmessage = function (m) {
+        pipe.postIncomingMessage(imports.serialization.deserialize(m.data));
       };
+
+      pipe.subscribeOutgoing(
+        function (message) {
+          postMessage(imports.serialization.serialize(message));
+        });
+
+      var returnValue = func();
+      if (returnValue && typeof returnValue.then === 'function') {
+        returnValue.then(
+          function (promiseValue) {
+            postMessage(imports.serialization.serialize(promiseValue));
+          });
+      }
+      else {
+        postMessage(imports.serialization.serialize(returnValue));
+      }
     `;
 
     return TaskBlob.encode(wrapped);
