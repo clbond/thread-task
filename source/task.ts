@@ -24,6 +24,14 @@ export interface TaskResult<R> {
   pipe: Pipe;
 }
 
+enum ObjectType {
+  /// A message sent through the communication pipe
+  Message,
+
+  /// Task result that will be returned to the application
+  Result,
+};
+
 /// A task which runs in a separate thread and produces a value of type {@link R}
 export class Task<R> {
   static run<Result>(func: Executable<Result>, ...args): TaskResult<Result> {
@@ -40,7 +48,18 @@ export class Task<R> {
 
       worker.onmessage = message => {
         try {
-          resolve(deserialize(message.data));
+          const deserialized = () => deserialize(message.data.value);
+
+          switch (message.data.objectType) {
+            case ObjectType.Result:
+              resolve(deserialized());
+              break;
+            case ObjectType.Message:
+              pipe.postIncomingMessage(deserialized());
+              break;
+            default:
+              break;
+          }
         } catch (e) {
           reject(new Error(`Failed to deserialize return result: ${e.stack}`));
         }
@@ -109,18 +128,29 @@ export class Task<R> {
 
       pipe.subscribeOutgoing(
         function (message) {
-          postMessage(imports.serialization.serialize(message));
+          postMessage({
+            objectType: ${ObjectType.Message},
+            value: imports.serialization.serialize(message),
+          });
         });
 
       var returnValue = func();
       if (returnValue && typeof returnValue.then === 'function') {
         returnValue.then(
           function (promiseValue) {
-            postMessage(imports.serialization.serialize(promiseValue));
+            postMessage({
+              objectType: ${ObjectType.Result},
+              value: imports.serialization.serialize(promiseValue),
+            });
           });
       }
       else {
-        postMessage(imports.serialization.serialize(returnValue));
+        const serializedValue = imports.serialization.serialize(returnValue);
+
+        postMessage({
+          objectType: ${ObjectType.Result},
+          value: serializedValue,
+        });
       }
     `;
 

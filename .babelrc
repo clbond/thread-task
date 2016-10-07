@@ -1,5 +1,3 @@
 {
-  "presets": ["es2015"],
-  "minified": true,
-  "compact": true
+  "presets": ["es2015"]
 }

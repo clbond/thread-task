@@ -25,6 +25,34 @@ describe('Task', () => {
       });
     });
 
+  it('should be able to pass arguments to task',
+    done => {
+      const {pipe} = Task.run(
+        (pipe, foo, bar) => {
+          pipe.postMessage({
+            argsCorrect: foo === 'foo' && bar === 'bar',
+          });
+        },
+        'foo',
+        'bar');
+
+      pipe.subscribe(m => {
+        expect(m.argsCorrect).toBe(true);
+        done();
+      })
+    });
+
+  it('should be able to run an asynchronous operation using a Promise in the task',
+    done => {
+      const {promise} = Task.run(() => {
+        return new Promise(resolve => {
+          setTimeout(resolve, 500);
+        });
+      });
+
+      promise.then(() => done());
+    });
+
   it('should be able to return complex object types across thread boundaries, intact',
     done => {
       Task.run(() => {
@@ -62,10 +90,36 @@ describe('Task', () => {
      Task.run(f, argument).promise.then(done);
    });
 
-   it('should be able to communicate with a task using Pipe',
+   it('should be able send a message from a task to the application using a pipe',
      done => {
        const task = Task.run(pipe => {
-
+         pipe.postMessage({hello: 'world'});
        });
+
+       task.pipe.subscribe(
+         message => {
+           expect(message.hello).toBe('world');
+           done();
+         });
      });
+
+    it('should be able to send a message from thie application to a task through a pipe',
+      done => {
+        const task = Task.run(pipe => {
+          return new Promise(resolve => {
+            pipe.subscribe(message => {
+              pipe.postMessage({gotTheMessageSon: true});
+              resolve();
+            })
+          });
+        });
+
+        task.pipe.subscribe(message => {
+          expect(message.gotTheMessageSon).toBe(true);
+        });
+
+        task.pipe.postMessage({test: 'foo'});
+
+        task.promise.then(done);
+      });
 });
