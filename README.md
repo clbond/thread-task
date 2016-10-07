@@ -4,7 +4,7 @@ What is `thread-task`? In essence, it is a multithreaded task library for web
 applications. "But web applications are single-threaded," you say! Indeed they
 are. But modern browsers implement something called a _web worker_. The issue
 with using web workers is that the API is silly and workers in general are
-very limited in that they can only pass very basic back and forth to each other.
+very limited in that they can only pass very basic databack and forth to each other.
 Using `thread-task`, you get a `Task` object that is much closer to something
 like [Task](https://msdn.microsoft.com/en-us/library/system.threading.tasks.task(v=vs.110).aspx)
 from the .NET runtime: you provide a function that represents a task that needs
@@ -57,8 +57,8 @@ will be able to run background operations without any context or arguments.
 So let's get a bit more creative with this, and create a task that accepts
 a `multiply` function that will multiply the value it is given by 10. But this
 logic originates in the main application and is provided to your task as an
-argument. Then we convert that number to a string representation of a base16
-number:
+argument.
+
 
 ```typescript
   const myTask = (multiply: (value: number) => number) => multiply(500);
