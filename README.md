@@ -23,6 +23,12 @@ Putting all of this together, it allows you to move expensive operations into
 a concurrent thread in a way that is dead simple, and in a way that lets you
 communicate using your real state objects, no matter how complex they are!
 
+Note also that the library supports having long-running background threads.
+You can make use of such threads using the `Pipe` system to transmit complex
+data types back and forth from your background thread and your primary
+application thread. When you have some work that needs to be done, just pipe
+it over and wait for the response.
+
 ## Usage
 
 Let's look first at the simplest, most contrived possible use of `Task`:
@@ -153,4 +159,44 @@ taken from the `Task` unit tests in `task.test.ts`:
             done();
           });
       });
+```
+
+Or this test, which does something similar but passes the structure in the
+opposite direction, modifies the structure inside the task, and passes it
+back to the application:
+
+```typescript
+  it('should be able to give a complex data type to a Task and get it back in a return value',
+    done => {
+      class UselessDataStructure {
+        private elements = new Set<string>();
+
+        add(value: string) {
+          this.elements.add(value);
+        }
+
+        size(): number {
+          return this.elements.size;
+        }
+      }
+
+      const run = async () => {
+        const structure = new UselessDataStructure();
+
+        const fromTask = await Task.run<UselessDataStructure>(
+          struct => {
+            struct.add('a');
+            struct.add('b');
+            struct.add('c');
+            return struct;
+          },
+          structure).promise;
+
+        expect(fromTask.size()).toBe(3);
+
+        done();
+      };
+
+      run();
+    });
 ```

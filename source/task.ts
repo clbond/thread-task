@@ -14,7 +14,7 @@ import {FunctionPair} from './function-pair';
 
 import {Pipe, PipeImpl} from './pipe';
 
-export type Executable<T> = (pipe?: Pipe, ...args) => T;
+export type Executable<T> = ((pipe?: Pipe, ...args) => T) | ((...args) => T);
 
 export interface TaskResult<R> {
   /// A promise that will be resolved when the task completes
@@ -46,6 +46,8 @@ export class Task<R> {
     const promise = new Promise((resolve, reject) => {
       const worker = new Worker(this.wrap());
 
+      const join = () => worker.terminate();
+
       worker.onmessage = message => {
         try {
           const deserialized = () => deserialize(message.data.value);
@@ -53,6 +55,7 @@ export class Task<R> {
           switch (message.data.objectType) {
             case ObjectType.Result:
               resolve(deserialized());
+              join();
               break;
             case ObjectType.Message:
               pipe.postIncomingMessage(deserialized());
@@ -62,11 +65,13 @@ export class Task<R> {
           }
         } catch (e) {
           reject(new Error(`Failed to deserialize return result: ${e.stack}`));
+          join();
         }
       };
 
       worker.onerror = (error: Event) => {
         reject(error);
+        join();
       };
 
       pipe.subscribeOutgoing(message => {

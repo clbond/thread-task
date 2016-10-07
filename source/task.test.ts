@@ -144,4 +144,38 @@ describe('Task', () => {
              done();
            });
        });
+
+    it('should be able to give a complex data type to a Task and get it back in a return value',
+      done => {
+        class UselessDataStructure {
+          private elements = new Set<string>();
+
+          add(value: string) {
+            this.elements.add(value);
+          }
+
+          size(): number {
+            return this.elements.size;
+          }
+        }
+
+        const run = async () => {
+          const structure = new UselessDataStructure();
+
+          const fromTask = await Task.run<UselessDataStructure>(
+            struct => {
+              struct.add('a');
+              struct.add('b');
+              struct.add('c');
+              return struct;
+            },
+            structure).promise;
+
+          expect(fromTask.size()).toBe(3);
+
+          done();
+        };
+
+        run();
+      });
 });

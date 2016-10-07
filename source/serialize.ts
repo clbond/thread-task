@@ -13,6 +13,8 @@ class Operation {
   arrays = new Array<any>();
   hashes = new Array<any>();
   objref = new Array<any>();
+  sets   = new Array<any>();
+  maps   = new Array<any>();
 
   /// Objects that have prototype chains other than Object.getPrototypeOf({})
   prototypes = new Array<any>();
@@ -63,15 +65,21 @@ const serializer = object => {
 
   return `function() {
     var _ = [${operation.objref.join(',')}];
-    
+
     ${operation.arrays.map(link =>
       `_[${encode(link.source)}][${encode(link.key)}] = _[${encode(link.target)}];`).join('')}
 
     ${operation.hashes.map(link =>
       `_[${encode(link.source)}][${encode(link.key)}] = _[${encode(link.target)}];`).join('')}
-    
+
+    ${operation.maps.map(link =>
+      `_[${encode(link.source)}][${encode(link.key)}] = _[${encode(link.target)}];`).join('')}
+
+    ${operation.sets.map(link =>
+      `_[${encode(link.source)}][${encode(link.key)}] = _[${encode(link.target)}];`).join('')}
+
     ${operation.prototypes.map(link =>
-      `Object.setPrototypeOf(_[${encode(link.source)}], _[${encode(link.target)}]);`).join('')}         
+      `Object.setPrototypeOf(_[${encode(link.source)}], _[${encode(link.target)}]);`).join('')}
 
       return _[0];
     }();`;
@@ -134,24 +142,43 @@ function map(operation: Operation, value) {
             operation.visits.set(value, index);
           }
 
+          const mapArray = (collection: Array<any>, array: Array<any>) => {
+            return `[${array.map((i, key) => {
+              const ref = map(operation, i);
+
+              if (ref instanceof Reference) {
+                ref.source = index;
+                ref.key = key;
+
+                collection.push(ref);
+
+                return 'null';
+              }
+
+              return ref;
+            })}]`;
+          };
+
           switch (objectType) {
             case '[object Array]':
               operation.tails.push(() => {
-                operation.objref[index] = `[${value.map((i: number, key) => {
-                  const ref = map(operation, i);
+                operation.objref[index] = mapArray(operation.arrays, value);
+              });
+              break;
+            case '[object Set]':
+              operation.tails.push(() => {
+                const array = [];
+                value.forEach(v => array.push(v));
 
-                  if (ref instanceof Reference) {
-                    ref.source = index;
-                    ref.key = key;
+                operation.objref[index] = `new Set(${mapArray(operation.sets, array)})`;
+              });
+              break;
+            case '[object Map]':
+              operation.tails.push(() => {
+                const array = [];
+                value.forEach((key, value) => array.push([key, value]));
 
-                    operation.arrays.push(ref);
-
-                    return 'null';
-                  }
-                  else {
-                    return ref;
-                  }
-                })}]`;
+                operation.objref[index] = `new Map(${mapArray(operation.maps, array)})`;
               });
               break;
             default:
@@ -160,16 +187,16 @@ function map(operation: Operation, value) {
 
                 operation.objref[index] = `{${Object.getOwnPropertyNames(value).map(key => {
                     const mapped = map(operation, value[key]);
-  
+
                     if (mapped instanceof Reference) {
                       mapped.source = index;
                       mapped.key = key;
-  
+
                       operation.hashes.push(mapped);
-  
+
                       return mapped;
                     }
-  
+
                     return `${JSON.stringify(key)}: ${mapped}`;
                   }).filter(v => v instanceof Reference === false).join(',')}}`;
 

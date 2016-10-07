@@ -36,7 +36,6 @@
     "karma-transform-path-preprocessor": "0.0.3",
     "karma-webpack": "^1.8.0",
     "raw-loader": "^0.5.1",
-    "ts-helpers": "^1.1.1",
     "typescript": "^2.0.3"
   },
   "dependencies": {
