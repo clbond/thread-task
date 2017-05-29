@@ -8,11 +8,8 @@ module.exports = {
   entry: path.join(__dirname, 'source', 'index.ts'),
 
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
-    publicPath: '/',
-    sourceMapFilename: '[name].js.map',
-    chunkFilename: '[id].chunk.js',
+    filename: 'dist/[name].js',
+    sourceMapFilename: 'dist/[name].js.map',
     library: 'main',
     libraryTarget: 'umd',
   },
