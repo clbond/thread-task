@@ -36,7 +36,7 @@ describe('Task', () => {
         'foo',
         'bar');
 
-      pipe.subscribe(m => {
+      pipe.subscribe<{argsCorrect: boolean}>(m => {
         expect(m.argsCorrect).toBe(true);
         done();
       })
@@ -56,13 +56,18 @@ describe('Task', () => {
   it('should be able to return complex object types across thread boundaries, intact',
     done => {
       Task.run(() => {
-        const complexObject = {a: 1, b: {c: 'foobar'}};
+        class MyClass {
+          a = 1;
+          b = {c: 'foobar'};
 
-        Object.setPrototypeOf(complexObject, {base: () => 'return value!'});
+          base() {
+            return 'return value!';
+          }
+        }
 
-        return complexObject;
+        return new MyClass();
       })
-      .promise.then((taskResult: any) => {
+      .promise.then(taskResult => {
         // this was returned from our worker
         expect(taskResult.a).toBe(1);
         expect(taskResult.b.c).toBe('foobar');

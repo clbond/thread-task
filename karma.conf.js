@@ -73,7 +73,7 @@ module.exports = (config) => {
         ],
       },
       module: {
-        rules: combinedLoaders(),
+        rules: Object.keys(loaders).map(k => loaders[k])
       },
     },
 
@@ -105,18 +105,3 @@ module.exports = (config) => {
     ],
   });
 };
-
-function combinedLoaders() {
-  return Object.keys(loaders).reduce(function reduce(aggregate, k) {
-    switch (k) {
-    case 'ts':
-      return aggregate.concat([ // force inline source maps
-        Object.assign(loaders[k],
-          { query: { babelOptions: { sourceMaps: 'both' }, skipDeclarationFilesCheck: true } })]);
-    default:
-      return aggregate.concat([loaders[k]]);
-    }
-  },
-  []);
-}
-

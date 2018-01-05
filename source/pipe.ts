@@ -1,4 +1,4 @@
-export type Handler = <T>(message: T) => void;
+export type Handler<T> = (message: T) => void;
 
 export interface Subscription {
   unsubscribe(): void;
@@ -6,7 +6,7 @@ export interface Subscription {
 
 export interface Pipe {
   /// Subscribe to incoming messages
-  subscribe(handler: Handler): Subscription;
+  subscribe<T = any>(handler: Handler<T>): Subscription;
 
   /// Post an outgoing message
   postMessage<T>(message: T): void;
@@ -14,13 +14,13 @@ export interface Pipe {
 
 /// Internal pipe implementation
 export class PipeImpl {
-  private incomingHandlers = new Set<Handler>();
-  private outgoingHandlers = new Set<Handler>();
+  private incomingHandlers = new Set<Handler<any>>();
+  private outgoingHandlers = new Set<Handler<any>>();
 
   private incomingBuffer = new Array<any>();
   private outgoingBuffer = new Array<any>();
 
-  subscribe(handler: Handler) {
+  subscribe<T = any>(handler: Handler<T>) {
     return this.internalSubscribe(this.incomingHandlers, this.incomingBuffer, handler);
   }
 
@@ -42,11 +42,11 @@ export class PipeImpl {
     }
   }
 
-  subscribeOutgoing(handler: Handler) {
+  subscribeOutgoing<T = any>(handler: Handler<T>) {
     return this.internalSubscribe(this.outgoingHandlers, this.outgoingBuffer, handler);
   }
 
-  private internalSubscribe(set: Set<Handler>, buffer: Array<any>, handler: Handler) {
+  private internalSubscribe<T>(set: Set<Handler<T>>, buffer: Array<any>, handler: Handler<T>) {
     set.add(handler);
 
     if (buffer.length > 0) {

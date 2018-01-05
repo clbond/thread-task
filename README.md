@@ -1,3 +1,13 @@
+**NOTE**: This is just a proof of concept that I did to illustrate how to do
+concurrent execution inside of a JS browser environment. It uses web workers
+and complex serialization to interact with workers in a way that is seamless
+to API consumers. But I probably wouldn't depend on it in a real project: I
+would create purpose-built workers. Still, it's a neat experiment! The only
+thing that doesn't work is referring to any closures or globals from your
+worker code, because of course those values are not available in the thread
+of execution that the worker runs in. So use the pipes and messages facility
+to communicate with the threads.
+
 ## thread-task
 
 What is `thread-task`? In essence, it is a multithreaded task library for web

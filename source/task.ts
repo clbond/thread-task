@@ -43,7 +43,7 @@ export class Task<R> {
   run(...args): TaskResult<R> {
     const pipe = new PipeImpl();
 
-    const promise = new Promise((resolve, reject) => {
+    const promise = new Promise<R>((resolve, reject) => {
       const worker = new Worker(this.wrap());
 
       const join = () => worker.terminate();
